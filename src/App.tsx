@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
-type GameState = "start" | "playing" | "paused" | "gameover";
+type GameState = "menu" | "start" | "playing" | "paused" | "gameover";
 type Lane = 0 | 1 | 2;
 type ObstacleKind = "teacher" | "desk" | "prefect" | "banana";
 type PuzzleType = "math" | "attendance" | "bag";
@@ -147,7 +147,7 @@ function saveHighScore(score: number) {
 }
 
 export default function App() {
-  const [gameState, setGameState] = useState<GameState>("start");
+  const [gameState, setGameState] = useState<GameState>("menu");
   const [score, setScore] = useState(0);
   const [distance, setDistance] = useState(0);
   const [combo, setCombo] = useState(0);
@@ -329,7 +329,7 @@ export default function App() {
         setGameState((s) => (s === "playing" ? "paused" : s === "paused" ? "playing" : s));
         return;
       }
-      if (event.key === "Enter" && (gameState === "start" || gameState === "gameover")) {
+      if (event.key === "Enter" && (gameState === "menu" || gameState === "start" || gameState === "gameover")) {
         startGame();
         return;
       }
@@ -466,6 +466,11 @@ export default function App() {
   const player = playerRef.current;
   const obstacles = obstaclesRef.current;
   const particles = particlesRef.current;
+  const bestScore = highScores.length ? highScores[0].score : 0;
+
+  if (gameState === "menu") {
+    return <LauncherMenu bestScore={bestScore} highScores={highScores} onPlay={startGame} />;
+  }
 
   return (
     <div className="min-h-screen overflow-hidden bg-[#140f24] text-white">
@@ -796,6 +801,89 @@ function Feature({ emoji, title, text }: { emoji: string; title: string; text: s
       <div className="text-3xl">{emoji}</div>
       <h4 className="mt-3 text-lg font-black">{title}</h4>
       <p className="mt-1 text-sm leading-6 text-white/65">{text}</p>
+    </div>
+  );
+}
+
+function LauncherMenu({
+  bestScore,
+  highScores,
+  onPlay,
+}: {
+  bestScore: number;
+  highScores: HighScoreEntry[];
+  onPlay: () => void;
+}) {
+  return (
+    <div className="relative min-h-screen overflow-hidden bg-[#140f24] text-white">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(251,191,36,0.22),_transparent_28%),linear-gradient(180deg,_#2a1c55_0%,_#120d20_48%,_#09070f_100%)]" />
+      <div className="absolute inset-0 opacity-30 [background-image:linear-gradient(rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] [background-size:36px_36px]" />
+      <div className="absolute left-[10%] top-[12%] h-40 w-40 rounded-full bg-yellow-300/20 blur-3xl" />
+      <div className="absolute right-[8%] top-[24%] h-44 w-44 rounded-full bg-fuchsia-400/20 blur-3xl" />
+
+      <div className="relative mx-auto flex min-h-screen w-full max-w-3xl flex-col items-center justify-center px-4 py-10 text-center">
+        <p className="text-xs font-bold uppercase tracking-[0.5em] text-yellow-200/80">Browser game</p>
+        <h1 className="mt-3 text-5xl font-black leading-[1.05] sm:text-7xl">
+          <span className="bg-gradient-to-r from-yellow-300 via-orange-400 to-pink-500 bg-clip-text text-transparent">
+            Escape School
+          </span>
+        </h1>
+        <p className="mt-3 max-w-xl text-sm leading-6 text-white/70 sm:text-base">
+          Mass bunk runner with chaos puzzles. Dodge teachers, jump desks, duck prefects, and sprint to the gate before assembly starts.
+        </p>
+
+        <div className="mt-6 flex items-center gap-3 rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm shadow-lg backdrop-blur">
+          <span className="uppercase tracking-[0.3em] text-white/50">Best</span>
+          <span className="bg-gradient-to-r from-yellow-300 to-orange-500 bg-clip-text text-xl font-black text-transparent">
+            {bestScore}
+          </span>
+        </div>
+
+        <button
+          onClick={onPlay}
+          className="mt-8 rounded-full bg-gradient-to-r from-yellow-300 via-orange-400 to-pink-500 px-10 py-4 text-base font-black uppercase tracking-[0.35em] text-slate-950 shadow-[0_20px_60px_rgba(251,146,60,0.35)] transition hover:scale-105"
+        >
+          Play
+        </button>
+        <p className="mt-3 text-xs uppercase tracking-[0.3em] text-white/45">Press Enter to start</p>
+
+        <div className="mt-10 grid w-full gap-3 text-left sm:grid-cols-2">
+          <div className="rounded-[24px] border border-white/10 bg-white/5 p-4 backdrop-blur">
+            <h3 className="bg-gradient-to-r from-cyan-300 to-blue-500 bg-clip-text text-base font-black text-transparent">
+              How to play
+            </h3>
+            <ul className="mt-3 space-y-1.5 text-sm text-white/75">
+              <li>← → swap lanes</li>
+              <li>↑ / Space jump over low stuff</li>
+              <li>↓ duck under tall staff</li>
+              <li>Solve puzzles for bonus score</li>
+              <li>Mobile: swipe or tap the buttons</li>
+            </ul>
+          </div>
+          <div className="rounded-[24px] border border-white/10 bg-white/5 p-4 backdrop-blur">
+            <h3 className="bg-gradient-to-r from-yellow-300 to-orange-500 bg-clip-text text-base font-black text-transparent">
+              High scores
+            </h3>
+            <div className="mt-3 space-y-2">
+              {highScores.length ? (
+                highScores.map((entry, index) => (
+                  <div
+                    key={`${entry.stamp}-${index}`}
+                    className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-sm"
+                  >
+                    <span className="font-bold text-white/90">
+                      #{index + 1} {entry.name}
+                    </span>
+                    <span className="text-yellow-300">{entry.score}</span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-white/60">No escapes yet. Be the first legend.</p>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
